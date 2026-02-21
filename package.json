@@ -1,0 +1,37 @@
+{
+  "name": "@kaiclawd/said-skill",
+  "version": "1.0.0",
+  "description": "OpenClaw skill for SAID Protocol (Solana AI agent identity)",
+  "type": "module",
+  "main": "scripts/said-status.mjs",
+  "scripts": {
+    "status": "node scripts/said-status.mjs",
+    "register": "node scripts/said-register.mjs",
+    "verify": "node scripts/said-verify.mjs"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.8"
+  },
+  "bin": {
+    "said-status": "./scripts/said-status.mjs",
+    "said-register": "./scripts/said-register.mjs",
+    "said-verify": "./scripts/said-verify.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kaiclawd/said-skill.git"
+  },
+  "keywords": [
+    "openclaw",
+    "skill",
+    "solana",
+    "said",
+    "ai-agent",
+    "identity"
+  ],
+  "author": "kaiclawd",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
