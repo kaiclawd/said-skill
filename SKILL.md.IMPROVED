@@ -1,0 +1,435 @@
+---
+name: said
+description: |
+  Register and verify your AI agent on SAID Protocol (Solana AI agent identity infrastructure).
+  
+  USE WHEN:
+  - Setting up on-chain identity for the first time
+  - Checking if agent is registered/verified on SAID
+  - Getting verified badge (costs 0.01 SOL)
+  - Updating agent metadata URI
+  - User asks "am I on SAID?" or "register on SAID"
+  - Need verifiable agent identity for reputation systems
+  
+  DON'T USE WHEN:
+  - Just checking Solana wallet balance (use wallet tool)
+  - Deploying smart contracts (different workflow)
+  - Looking up OTHER agents on SAID (this is for YOUR identity only)
+  - User asks about SAID protocol in general (just explain it)
+  - Trading or token operations (SAID is identity, not a token)
+  
+  OUTPUTS:
+  - Console output with registration/verification status
+  - Transaction signatures for on-chain operations
+  - Solscan explorer links for verification
+  
+  SUCCESS CRITERIA:
+  - Agent PDA exists on-chain for status checks
+  - Transaction confirmed for register/verify operations
+  - Metadata URI accessible and valid JSON
+---
+
+# SAID Protocol Skill
+
+Register your agent on Solana's identity infrastructure for AI agents.
+
+## Quick Start
+
+```bash
+# Check registration status
+./run.sh status
+
+# Register agent (free, ~0.002 SOL rent)
+./run.sh register --metadata "https://yoursite.com/agent.json"
+
+# Get verified badge (0.01 SOL fee)
+./run.sh verify
+```
+
+## Prerequisites
+
+- Solana wallet with SOL for transactions
+- Wallet keypair at `~/.config/solana/id.json` (or use `--wallet` flag)
+- Public HTTPS URL hosting your AgentCard JSON
+
+## Program Details
+
+- **Program ID:** `5dpw6KEQPn248pnkkaYyWfHwu2nfb3LUMbTucb6LaA8G`
+- **Network:** Solana Mainnet
+- **Treasury:** `2XfHTeNWTjNwUmgoXaafYuqHcAAXj8F5Kjw2Bnzi4FxH`
+
+## What Gets Stored On-Chain
+
+Your agent identity PDA contains:
+- `owner` - your wallet pubkey
+- `metadata_uri` - link to your AgentCard JSON
+- `created_at` - registration timestamp (Unix seconds)
+- `is_verified` - verification status (boolean)
+- `verified_at` - verification timestamp (if verified)
+
+## AgentCard JSON Schema
+
+Host a JSON file at your `metadata_uri`:
+
+```json
+{
+  "name": "Kai",
+  "description": "Autonomous AI agent for crypto trading and research",
+  "twitter": "@kaiclawd",
+  "website": "https://kai.com",
+  "capabilities": [
+    "solana-trading",
+    "market-research",
+    "autonomous-execution"
+  ],
+  "avatar": "https://kai.com/avatar.png",
+  "version": "1.0.0"
+}
+```
+
+**Required fields:** `name`, `description`  
+**Optional fields:** `twitter`, `website`, `capabilities`, `avatar`, `version`
+
+## Workflow for Agents
+
+### First-Time Setup
+1. Check status: `./run.sh status`
+2. If not registered:
+   - Create AgentCard JSON with your details
+   - Host it at a public HTTPS URL (GitHub raw, website, IPFS)
+   - Verify URL is accessible: `curl -L <URL>`
+3. Register: `./run.sh register --metadata <URL>`
+4. Verify transaction on Solscan
+5. (Optional) Get verified: `./run.sh verify`
+
+### Checking Status
+- Run `./run.sh status` anytime
+- Shows: wallet address, balance, registration status, verification status
+- Provides next steps if not set up
+
+### Example Agent Flow
+
+```
+User: "Am I registered on SAID?"
+→ Run ./run.sh status
+→ Parse output, report to user
+
+User: "Register me on SAID"
+→ Check if metadata JSON exists
+→ If not, create it based on agent profile
+→ Upload to GitHub or hosting
+→ Run ./run.sh register --metadata <URL>
+→ Confirm transaction, share Solscan link
+```
+
+## Commands
+
+### status
+```bash
+./run.sh status [--wallet <path>]
+```
+
+**What it does:**
+- Loads wallet keypair
+- Derives agent PDA from wallet public key
+- Queries on-chain account
+- Shows registration and verification status
+
+**Output:**
+```
+Wallet: ErudyRLVepGdZ9dPC3zMQFwcDepZBehvR8UPMWABfv9q
+Agent PDA: FAVCurTufF9y4KAWNRNwGPCPJkTTExvqaHWhnCuNKRSW
+Balance: 0.0500 SOL
+
+✅ Registered on SAID
+Verified: ✅ Yes
+
+Explorer: https://solscan.io/account/FAVCurTufF9y4KAWNRNwGPCPJkTTExvqaHWhnCuNKRSW
+```
+
+### register
+```bash
+./run.sh register --metadata <URL> [--wallet <path>]
+```
+
+**What it does:**
+- Validates you're not already registered
+- Creates agent PDA account
+- Stores metadata URI on-chain
+- Sets created_at timestamp
+
+**Cost:** ~0.002 SOL (rent-exempt account)
+
+**Output:**
+```
+Wallet: ErudyRLVepGdZ9dPC3zMQFwcDepZBehvR8UPMWABfv9q
+Agent PDA: FAVCurTufF9y4KAWNRNwGPCPJkTTExvqaHWhnCuNKRSW
+Metadata URI: https://kai.com/agent.json
+Sending transaction...
+✅ Agent registered on SAID!
+Tx: https://solscan.io/tx/2xY8...
+```
+
+### verify
+```bash
+./run.sh verify [--wallet <path>]
+```
+
+**What it does:**
+- Checks you're already registered (fails if not)
+- Transfers 0.01 SOL to SAID treasury
+- Sets is_verified flag to true
+- Records verified_at timestamp
+
+**Cost:** 0.01 SOL + gas (~0.000005 SOL)
+
+**Output:**
+```
+Wallet: ErudyRLVepGdZ9dPC3zMQFwcDepZBehvR8UPMWABfv9q
+Agent PDA: FAVCurTufF9y4KAWNRNwGPCPJkTTExvqaHWhnCuNKRSW
+Fee: 0.01 SOL → Treasury
+Sending transaction...
+✅ Agent verified on SAID!
+Tx: https://solscan.io/tx/5nB2...
+```
+
+## Edge Cases
+
+### Wallet not found
+**Error:** `Wallet not found at ~/.config/solana/id.json`
+
+**Fix:**
+```bash
+# Option 1: Specify wallet path
+./run.sh status --wallet ~/path/to/wallet.json
+
+# Option 2: Set environment variable
+export SOLANA_WALLET=~/path/to/wallet.json
+./run.sh status
+```
+
+### Insufficient balance
+**Registration:** Need ~0.002 SOL for rent  
+**Verification:** Need 0.01 SOL + ~0.000005 SOL gas
+
+**Check balance:**
+```bash
+./run.sh status
+# Shows balance in output
+```
+
+### Already registered
+**Behavior:** Script detects existing PDA and warns:
+```
+⚠️ Already registered! Use update instead.
+```
+
+**Note:** Update command not yet implemented (see Issue #1)
+
+### Metadata URL not accessible
+**Problem:** Registration succeeds even if URL is down (not validated on-chain)
+
+**Prevention:**
+```bash
+# Test your URL first
+curl -L https://yoursite.com/agent.json
+
+# Should return valid JSON, not 404
+```
+
+### RPC rate limiting
+**Symptom:** Errors like "429 Too Many Requests"
+
+**Fix:** Use custom RPC endpoint:
+```bash
+export SOLANA_RPC_URL="https://your-quicknode-url.com"
+./run.sh status
+```
+
+**QuickNode setup (recommended):**
+```bash
+export QUICKNODE_RPC="https://newest-restless-mansion.solana-mainnet.quiknode.pro/..."
+```
+
+## Configuration
+
+### Custom RPC Endpoint
+```bash
+# Option 1: QuickNode
+export QUICKNODE_RPC="<your-quicknode-url>"
+
+# Option 2: Any Solana RPC
+export SOLANA_RPC_URL="https://api.mainnet-beta.solana.com"
+
+# Check it works
+./run.sh status
+```
+
+### Custom Wallet Path
+```bash
+# Per-command
+./run.sh status --wallet ~/wallets/agent.json
+
+# Or set globally
+export SOLANA_WALLET=~/wallets/agent.json
+```
+
+## Costs
+
+| Action | Cost | Recoverable |
+|--------|------|-------------|
+| Register | ~0.002 SOL | Yes (rent) |
+| Verify | 0.01 SOL | No (treasury fee) |
+| Update metadata | ~0.000005 SOL | No (gas) |
+
+**Rent recovery:** When you close your agent account, rent is refunded.
+
+## Security Best Practices
+
+### 1. Protect Your Wallet
+```bash
+# Set strict file permissions
+chmod 600 ~/.config/solana/id.json
+
+# Never commit wallet files
+echo "*.json" >> .gitignore
+```
+
+### 2. Use HTTPS for Metadata
+Always host AgentCard JSON on HTTPS URLs to prevent MITM attacks.
+
+❌ `http://mysite.com/agent.json` (insecure)  
+✅ `https://mysite.com/agent.json` (secure)
+
+### 3. Verify Transactions
+Check Solscan links after registration/verification:
+```
+Explorer: https://solscan.io/account/FAVCurTufF9y4KAWNRNwGPCPJkTTExvqaHWhnCuNKRSW
+```
+
+Confirm:
+- Metadata URI is correct
+- Verification status matches expectation
+- No unexpected transactions from your wallet
+
+### 4. Backup Your Wallet
+Store seed phrase offline before using this skill.
+
+## Troubleshooting
+
+### "Module not found: @solana/web3.js"
+**Cause:** Dependencies not installed
+
+**Fix:**
+```bash
+cd /path/to/said-skill
+npm install
+```
+
+### "Network request failed"
+**Cause:** RPC endpoint down or rate limited
+
+**Fix:**
+```bash
+# Switch to QuickNode or different RPC
+export SOLANA_RPC_URL="https://api.mainnet-beta.solana.com"
+```
+
+### Transaction times out
+**Cause:** Network congestion
+
+**Fix:**
+- Wait 30 seconds and try again
+- Check Solana status: https://status.solana.com
+- Increase compute budget (advanced)
+
+### "Already registered" but account doesn't exist
+**Cause:** Old transaction pending or stale cache
+
+**Fix:**
+```bash
+# Check on Solscan directly
+# Visit: https://solscan.io/account/<YOUR_AGENT_PDA>
+
+# If truly not there, try registering again
+./run.sh register --metadata <URL>
+```
+
+## Examples
+
+### Example 1: First-time setup
+```bash
+$ ./run.sh status
+Wallet: ErudyRLVepGdZ9dPC3zMQFwcDepZBehvR8UPMWABfv9q
+Balance: 0.0500 SOL
+❌ Not registered on SAID
+
+$ ./run.sh register --metadata "https://kai.com/agent.json"
+Sending transaction...
+✅ Agent registered on SAID!
+Tx: https://solscan.io/tx/2xY8...
+
+$ ./run.sh verify
+Fee: 0.01 SOL → Treasury
+Sending transaction...
+✅ Agent verified on SAID!
+
+$ ./run.sh status
+Wallet: ErudyRLVepGdZ9dPC3zMQFwcDepZBehvR8UPMWABfv9q
+✅ Registered on SAID
+Verified: ✅ Yes
+```
+
+### Example 2: Custom wallet
+```bash
+$ ./run.sh status --wallet ~/wallets/trading-bot.json
+Wallet: 7vX9...
+Agent PDA: 3kL2...
+Balance: 1.2500 SOL
+❌ Not registered on SAID
+```
+
+### Example 3: QuickNode RPC
+```bash
+$ export QUICKNODE_RPC="https://my-node.quiknode.pro/abc123"
+$ ./run.sh status
+# Uses QuickNode instead of public RPC
+```
+
+## Negative Examples (DO NOT USE FOR)
+
+❌ **"Tell me about SAID Protocol"**  
+→ Just explain it, no skill needed
+
+❌ **"Check my SOL balance"**  
+→ Use wallet tool directly: `solana balance`
+
+❌ **"Look up agent X on SAID"**  
+→ This skill only manages YOUR identity, not lookups
+
+❌ **"Deploy a Solana program"**  
+→ Wrong tool, SAID is identity not deployment
+
+❌ **"Buy SAID tokens"**  
+→ SAID is not a token, it's an identity protocol
+
+## Links
+
+- **Website:** https://saidprotocol.com
+- **Program Explorer:** https://solscan.io/account/5dpw6KEQPn248pnkkaYyWfHwu2nfb3LUMbTucb6LaA8G
+- **Twitter:** @saidinfra
+- **Docs:** https://docs.saidprotocol.com (if available)
+
+## Compatibility
+
+- **OpenClaw:** Tested with v1.x (Feb 2026)
+- **Node.js:** Requires 18.0.0 or higher (ES modules)
+- **Solana:** Mainnet-beta, @solana/web3.js ^1.95.0
+- **OS:** macOS, Linux (Windows untested)
+
+## Version History
+
+- **1.0.0** - Initial release
+  - status, register, verify commands
+  - Basic error handling
+  - QuickNode RPC support
